@@ -11,6 +11,8 @@ const game = {
 	blocks: [],
 	rows: 6,
 	cols: 8,
+	width: 640,
+	height: 360,
 	sprites : {
 		background: null,
 		ball: null,
@@ -59,6 +61,8 @@ const game = {
 		for (let row = 0; row < this.rows; row++) {
 			for (let col = 0; col < this.cols; col++) {
 				this.blocks.push({
+					width: 60,
+					height: 20,
 					x: 64 * col + 65,
 					y: 24 * row + 35
 				});
@@ -69,6 +73,16 @@ const game = {
 	update() {
 		this.platform.move();
 		this.ball.move();
+
+		for (let block of this.blocks) {
+			if (this.ball.collide(block)) {
+				this.ball.bumbBlock(block);
+			};
+		};
+
+		if (this.ball.collide(this.platform)) {
+			this.ball.bumbPlatform(this.platform);
+		};
 	},
 
 	run () {
@@ -80,7 +94,9 @@ const game = {
 	},
 
 	render () {
-		this.ctx.drawImage(this.sprites.background, 0, 0 , 640, 360);
+		this.ctx.clearRect(0, 0, this.width, this.height);
+
+		this.ctx.drawImage(this.sprites.background, 0, 0 , this.width, this.height);
 		this.ctx.drawImage(this.sprites.ball, this.ball.x, this.ball.y, 20, 20);
 		this.ctx.drawImage(this.sprites.platform, this.platform.x, this.platform.y, 150, 20);
 		
@@ -101,26 +117,60 @@ const game = {
 			this.run();
 		});
 	},
+
+	random (min, max) {
+		const result = Math.floor(Math.random() * (max - min + 1) + min);
+
+		return result;
+	}
 };
 
 game.ball = {
 	x: 310,
 	y: 280,
+	dx: 0,
 	dy: 0,
 	velosity: 3,
+	width: 20,
+	height: 20,
 	start () {
-		this.dy = this.velosity;
+		this.dx = game.random (-this.velosity, this.velosity);
+		this.dy = -this.velosity;
 	},
 	move () {
-		if (this.dy) {
-			this.y -= this.dy;
+		if (this.dx) {
+			this.x += this.dx;
 		};
-	}
+
+		if (this.dy) {
+			this.y += this.dy;
+		};
+	},
+	collide (element) {
+		const x = this.x + this.dx;
+		const y = this.y + this.dy;
+
+		if (x + this.width > element.x &&
+		x < element.x + element.width &&
+		y + this.height > element.y &&
+		y < element.y + element.height) {
+			return true;
+		};
+		return false;
+	},
+	bumbBlock (block) {
+		this.dy *= -1;
+	},
+	bumbPlatform (platform) {
+		this.dy *= -1;
+	},
 };
 
 game.platform = {
 	velosity: 6,
 	dx: 0,
+	width: 150,
+	height: 20,
 	ball: game.ball,
 	fire () {
 		if (this.ball) {
